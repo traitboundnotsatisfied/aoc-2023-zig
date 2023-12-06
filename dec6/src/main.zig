@@ -1,22 +1,26 @@
 const std = @import("std");
 
 pub fn main() !void {
-    try test_process("test.txt", 42);
-    const real_sum = try process("input.txt");
-    std.debug.print("The sum for part 1 is {d}.\n", .{real_sum});
-}
-
-fn test_process(filename: []const u8, answer: u64) !void {
-    const test_sum = try process(filename);
-    if (test_sum == answer) {
-        std.debug.print("TEST PASSED\n", .{});
-    } else {
-        std.debug.print("TEST FAILED, got {d} not {d}.\n", .{ test_sum, answer });
-        return error.TestFailed;
+    const input = [_]struct { u64, u64 }{
+        .{ 59707878, 430121812131276 },
+    };
+    var product: u64 = 1;
+    for (input) |item| {
+        product *= numWaysToBeatRecord(item[0], item[1]);
     }
+    std.debug.print("{d}\n", .{product});
 }
 
-fn process(filename: []const u8) !u64 {
-    _ = filename;
-    return 42;
+fn numWaysToBeatRecord(time: u64, record_dist: u64) u64 {
+    var count: u64 = 0;
+    for (1..time) |time_button| {
+        if (beatsRecord(time_button, time - time_button, record_dist)) {
+            count += 1;
+        }
+    }
+    return count;
+}
+
+fn beatsRecord(speed: u64, time_left: u64, record_dist: u64) bool {
+    return (time_left * speed) > record_dist;
 }
