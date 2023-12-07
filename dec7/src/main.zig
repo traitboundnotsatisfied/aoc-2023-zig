@@ -46,7 +46,7 @@ fn process(filename: []const u8, comptime n: comptime_int) !u64 {
         if (ch == '\n') {
             // handle current line
             lines[lines_i] = Line{
-                .hand = hand,
+                .hand = pickJokerValues(hand),
                 .bid = bid,
             };
             lines_i += 1;
@@ -103,7 +103,9 @@ fn process(filename: []const u8, comptime n: comptime_int) !u64 {
         }
         ranked[position] = line;
         n_ranked += 1;
+        std.debug.print("\r{d}/{d}             ", .{ n_ranked, n });
     }
+    std.debug.print("\n", .{});
     var sum: u64 = 0;
     for (0..n) |i| {
         sum += ranked[i].bid * (i + 1);
@@ -141,7 +143,7 @@ fn cardAsNumeric(a: u8) u8 {
     }
     return switch (a) {
         'T' => 10,
-        'J' => 11,
+        'J' => 0,
         'Q' => 12,
         'K' => 13,
         'A' => 14,
@@ -149,28 +151,34 @@ fn cardAsNumeric(a: u8) u8 {
     };
 }
 
-fn assignClass(a: [5]u8) u8 {
+fn pickJokerValues(a: [5]u8) [5]u8 {
     var max_val: u8 = 0;
+    var best = std.mem.zeroes([5]u8);
     for (possibilities(a[0])) |c0| {
         for (possibilities(a[1])) |c1| {
             for (possibilities(a[2])) |c2| {
                 for (possibilities(a[3])) |c3| {
                     for (possibilities(a[4])) |c4| {
-                        const val = assignClassIgnoreJokers([5]u8{
+                        const jokerless = [5]u8{
                             c0, c1, c2, c3, c4,
-                        });
-                        if (val > max_val) max_val = val;
-                        if (a[4] == 'J') break;
+                        };
+                        //std.debug.print("~> {d}\n", .{jokerless});
+                        const val = assignClass(jokerless);
+                        if (val > max_val) {
+                            max_val = val;
+                            best = jokerless;
+                        }
+                        if (a[4] != 'J') break;
                     }
-                    if (a[3] == 'J') break;
+                    if (a[3] != 'J') break;
                 }
-                if (a[2] == 'J') break;
+                if (a[2] != 'J') break;
             }
-            if (a[1] == 'J') break;
+            if (a[1] != 'J') break;
         }
-        if (a[0] == 'J') break;
+        if (a[0] != 'J') break;
     }
-    return max_val;
+    return best;
 }
 
 fn possibilities(a: u8) [12]u8 {
@@ -196,7 +204,7 @@ fn possibilities(a: u8) [12]u8 {
     }
 }
 
-fn assignClassIgnoreJokers(a: [5]u8) u8 {
+fn assignClass(a: [5]u8) u8 {
     if (n_of_a_kind(a, 5)) return 7;
     if (n_of_a_kind(a, 4)) return 6;
     if (full_house(a)) return 5;
