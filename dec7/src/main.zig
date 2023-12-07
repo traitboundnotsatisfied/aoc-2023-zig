@@ -8,7 +8,6 @@ pub fn main() !void {
 
 fn test_process(filename: []const u8, comptime n: comptime_int, answer: u64) !void {
     const test_sum = try process(filename, n);
-    if (!beats("33332".*, "2AAAA".*)) return error.YourMom;
     if (test_sum == answer) {
         std.debug.print("TEST PASSED\n", .{});
     } else {
@@ -19,6 +18,7 @@ fn test_process(filename: []const u8, comptime n: comptime_int, answer: u64) !vo
 
 const Line = struct {
     hand: [5]u8,
+    hand_incl_jokers: [5]u8,
     bid: u64,
 };
 
@@ -47,6 +47,7 @@ fn process(filename: []const u8, comptime n: comptime_int) !u64 {
             // handle current line
             lines[lines_i] = Line{
                 .hand = pickJokerValues(hand),
+                .hand_incl_jokers = hand,
                 .bid = bid,
             };
             lines_i += 1;
@@ -84,7 +85,7 @@ fn process(filename: []const u8, comptime n: comptime_int) !u64 {
     }
     for (lines) |line| {
         var position: usize = 0;
-        while ((position < n_ranked) and beats(line.hand, ranked[position].hand)) {
+        while ((position < n_ranked) and beats(line, ranked[position])) {
             position += 1;
         }
         {
@@ -113,16 +114,16 @@ fn process(filename: []const u8, comptime n: comptime_int) !u64 {
     return sum;
 }
 
-fn beats(a: [5]u8, b: [5]u8) bool {
-    const a_class = assignClass(a);
-    const b_class = assignClass(b);
+fn beats(a: Line, b: Line) bool {
+    const a_class = assignClass(a.hand);
+    const b_class = assignClass(b.hand);
     if (a_class > b_class) {
         return true;
     }
     if (a_class < b_class) {
         return false;
     }
-    return beatsGivenSameClass(a, b);
+    return beatsGivenSameClass(a.hand_incl_jokers, b.hand_incl_jokers);
 }
 
 fn beatsGivenSameClass(a: [5]u8, b: [5]u8) bool {
