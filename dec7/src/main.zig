@@ -1,9 +1,9 @@
 const std = @import("std");
 
 pub fn main() !void {
-    try test_process("test.txt", 5, 6440);
+    try test_process("test.txt", 5, 5905);
     const real_sum = try process("input.txt", 1000);
-    std.debug.print("The answer for part 1 is {d}.\n", .{real_sum});
+    std.debug.print("The answer for part 2 is {d}.\n", .{real_sum});
 }
 
 fn test_process(filename: []const u8, comptime n: comptime_int, answer: u64) !void {
@@ -150,6 +150,53 @@ fn cardAsNumeric(a: u8) u8 {
 }
 
 fn assignClass(a: [5]u8) u8 {
+    var max_val: u8 = 0;
+    for (possibilities(a[0])) |c0| {
+        for (possibilities(a[1])) |c1| {
+            for (possibilities(a[2])) |c2| {
+                for (possibilities(a[3])) |c3| {
+                    for (possibilities(a[4])) |c4| {
+                        const val = assignClassIgnoreJokers([5]u8{
+                            c0, c1, c2, c3, c4,
+                        });
+                        if (val > max_val) max_val = val;
+                        if (a[4] == 'J') break;
+                    }
+                    if (a[3] == 'J') break;
+                }
+                if (a[2] == 'J') break;
+            }
+            if (a[1] == 'J') break;
+        }
+        if (a[0] == 'J') break;
+    }
+    return max_val;
+}
+
+fn possibilities(a: u8) [12]u8 {
+    if (a == 'J') {
+        return [12]u8{
+            '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'Q', 'K', 'A',
+        };
+    } else {
+        return [12]u8{
+            a,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+        };
+    }
+}
+
+fn assignClassIgnoreJokers(a: [5]u8) u8 {
     if (n_of_a_kind(a, 5)) return 7;
     if (n_of_a_kind(a, 4)) return 6;
     if (full_house(a)) return 5;
