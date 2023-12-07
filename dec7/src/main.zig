@@ -104,9 +104,9 @@ fn process(filename: []const u8, comptime n: comptime_int) !u64 {
         }
         ranked[position] = line;
         n_ranked += 1;
-        std.debug.print("\r{d}/{d}             ", .{ n_ranked, n });
+        //std.debug.print("\r{d}/{d}             ", .{ n_ranked, n });
     }
-    std.debug.print("\n", .{});
+    //std.debug.print("\n", .{});
     var sum: u64 = 0;
     for (0..n) |i| {
         sum += ranked[i].bid * (i + 1);
