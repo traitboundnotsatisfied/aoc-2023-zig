@@ -62,5 +62,22 @@ fn process(filename: []const u8, comptime n: comptime_int) !u64 {
             hand_i += 1;
         }
     }
-    return 42;
+    var ranked = std.mem.zeroes([n]Line);
+    var n_ranked: usize = 0;
+    for (lines) |line| {
+        var position = 0;
+        while (beats(line, ranked[position]) and (position <= n_ranked)) {
+            position += 1;
+        }
+        for (position..n_ranked) |i| {
+            ranked[i + 1] = ranked[i];
+        }
+        ranked[position] = line;
+        n_ranked += 1;
+    }
+    var sum: u64 = 0;
+    for (0..n) |i| {
+        sum += ranked[i].bid * i;
+    }
+    return sum;
 }
