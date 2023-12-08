@@ -2,8 +2,8 @@ const std = @import("std");
 
 pub fn main() !void {
     try test_process("test.txt", 6);
-    const real_sum = try process("input.txt");
-    std.debug.print("The answer for part 2 is {d}.\n", .{real_sum});
+    //const real_sum = try process("input.txt");
+    //std.debug.print("The answer for part 2 is {d}.\n", .{real_sum});
 }
 
 fn test_process(filename: []const u8, answer: u64) !void {
@@ -93,46 +93,72 @@ fn process(filename: []const u8) !u64 {
             transition_line_i += 1;
         }
     }
+    var bdirections = try alloc.alloc(bool, directions.items.len);
+    defer alloc.free(bdirections);
+    for (0..directions.items.len) |i| bdirections[i] = (directions.items[i] == 'L');
     for (directions.items) |i| std.debug.print("{s}", .{[1]u8{i}});
     std.debug.print("\n", .{});
     var pos = std.ArrayList(Ident).init(alloc);
     defer pos.deinit();
     var key_iter = transition.keyIterator();
+    var hash_map_get_it = std.AutoHashMap([3]u8, u16).init(alloc);
+    defer hash_map_get_it.deinit();
+    var n_nodes: usize = 0;
     while (key_iter.next()) |i| {
+        var new = [3]u8{ undefined, undefined, undefined };
+        for (0..3) |j| new[j] = i[j];
+        hash_map_get_it.put(new, @intCast(n_nodes));
+        n_nodes += 1;
         if (i[2] == 'A') {
-            var new = [3]u8{ undefined, undefined, undefined };
-            for (0..3) |j| new[j] = i[j];
             try pos.append(new);
         }
     }
     var direction_index: usize = 0;
+    var atransitions_l = alloc.alloc(u16, n_nodes);
+    defer alloc.free(atransitions_l);
+    var atransitions_r = alloc.alloc(u16, n_nodes);
+    defer alloc.free(atransitions_r);
+    var key_iter2 = transition.keyIterator();
+    while (key_iter2.next()) |i| {
+        const ih = try hash_in_a_way(i, hash_map_get_it);
+        const value = try transition.get(i);
+        const lh = try hash_in_a_way(value[0], hash_map_get_it);
+        const rh = try hash_in_a_way(value[1], hash_map_get_it);
+        atransitions_l[ih] = lh;
+        atransitions_r[ih] = rh;
+    }
     var steps: u64 = 0;
     for (pos.items) |i| std.debug.print("{s} ", .{i});
     std.debug.print("\n", .{});
-    while (!try finished(pos)) {
-        const direction = directions.items[direction_index];
-        direction_index = (direction_index + 1) % directions.items.len;
-        for (0..pos.items.len) |pos_i| {
-            switch (direction) {
-                'L' => {
-                    pos.items[pos_i] = transition.get(pos.items[pos_i]).?[0];
-                },
-                'R' => {
-                    pos.items[pos_i] = transition.get(pos.items[pos_i]).?[1];
-                },
-                else => @panic("invalid direction"),
+    var apos = alloc.alloc(u16, pos.items.len);
+    defer alloc.free(apos);
+    for (0..pos.items.len) |i| apos[i] = pos.items[i];
+    while (!finished(apos)) {
+        const direction = bdirections[direction_index];
+        direction_index = (direction_index + 1) % bdirections.len;
+        for (0..apos.len) |pos_i| {
+            if (direction) {
+                apos[pos_i] = atransitions_l[apos[pos_i]];
+            } else {
+                apos[pos_i] = atransitions_r[apos[pos_i]];
             }
         }
         steps += 1;
-        if ((steps % 1_000_000) == 0) {
+        if ((steps % 10_000_000) == 0) {
             for (pos.items) |i| std.debug.print("{s} ", .{i});
-            std.debug.print("({s})\n", .{[1]u8{direction}});
+            std.debug.print("({s})\n", .{if (direction) "L" else "R"});
         }
     }
     return steps;
 }
 
-fn finished(pos: std.ArrayList(Ident)) !bool {
-    for (pos.items) |i| if (i[2] != 'Z') return false;
+fn finished(pos: []u16) bool {
+    for (pos) |i| if ((i & 0x7FFF) == 0) return false;
     return true;
+}
+
+fn hash_in_a_way(x: [3]u8, hash_map_get_it: std.AutoHashMap([3]u8, u16)) !u16 {
+    var result = try hash_map_get_it.get(x);
+    if (x[2] == 'Z') result |= 0x8000;
+    return result;
 }
