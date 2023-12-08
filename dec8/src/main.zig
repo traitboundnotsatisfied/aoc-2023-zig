@@ -35,7 +35,19 @@ fn process(filename: []const u8) !u64 {
     var ch: u8 = undefined;
     var reading_directions: bool = true;
     var nothing_so_far = true;
-    var transition_line = [3]u8{ undefined, undefined, undefined };
+    var transition_line = [11]u8{
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+    };
     var transition_line_i: u8 = 0;
     while (true) {
         ch = reader.readByte() catch |err| switch (err) {
@@ -43,29 +55,33 @@ fn process(filename: []const u8) !u64 {
             else => return err,
         };
         if (ch == '\n') {
-            if (nothing_so_far) reading_directions = false;
-            nothing_so_far = true;
-            transition_line_i = 0;
-            if (!reading_directions) {
+            if (nothing_so_far) {
+                reading_directions = false;
+            } else if (!reading_directions) {
                 var spliterator = std.mem.split(u8, &transition_line, ",");
                 var i: u8 = 0;
                 var src: Ident = undefined;
                 var dst_l: Ident = undefined;
                 var dst_r: Ident = undefined;
                 while (spliterator.next()) |part| {
-                    var target = switch (i) {
-                        0 => &src,
-                        1 => &dst_l,
-                        2 => &dst_r,
-                        else => @panic("invalid value"),
-                    };
-                    for (0..3) |cpy_i| {
-                        target[cpy_i] = part[cpy_i];
+                    switch (i) {
+                        0 => {
+                            for (0..3) |j| src[j] = part[j];
+                        },
+                        1 => {
+                            for (0..3) |j| dst_l[j] = part[j];
+                        },
+                        2 => {
+                            for (0..3) |j| dst_r[j] = part[j];
+                        },
+                        else => {},
                     }
                     i += 1;
                 }
                 try transition.put(src, .{ dst_l, dst_r });
             }
+            nothing_so_far = true;
+            transition_line_i = 0;
             continue;
         } else {
             nothing_so_far = false;
@@ -74,6 +90,7 @@ fn process(filename: []const u8) !u64 {
             try directions.append(ch);
         } else {
             transition_line[transition_line_i] = ch;
+            transition_line_i += 1;
         }
     }
     return 42;
