@@ -93,5 +93,46 @@ fn process(filename: []const u8) !u64 {
             transition_line_i += 1;
         }
     }
-    return 42;
+    for (directions.items) |i| std.debug.print("{s}", .{[1]u8{i}});
+    std.debug.print("\n", .{});
+    var pos = std.ArrayList(Ident).init(alloc);
+    defer pos.deinit();
+    var key_iter = transition.keyIterator();
+    while (key_iter.next()) |i| {
+        if (i[2] == 'A') {
+            var new = [3]u8{ undefined, undefined, undefined };
+            for (0..3) |j| new[j] = i[j];
+            try pos.append(new);
+        }
+    }
+    var direction_index: usize = 0;
+    var steps: u64 = 0;
+    for (pos.items) |i| std.debug.print("{s} ", .{i});
+    std.debug.print("\n", .{});
+    while (!try finished(pos)) {
+        const direction = directions.items[direction_index];
+        direction_index = (direction_index + 1) % directions.items.len;
+        for (0..pos.items.len) |pos_i| {
+            switch (direction) {
+                'L' => {
+                    pos.items[pos_i] = transition.get(pos.items[pos_i]).?[0];
+                },
+                'R' => {
+                    pos.items[pos_i] = transition.get(pos.items[pos_i]).?[1];
+                },
+                else => @panic("invalid direction"),
+            }
+        }
+        steps += 1;
+        if ((steps % 1_000_000) == 0) {
+            for (pos.items) |i| std.debug.print("{s} ", .{i});
+            std.debug.print("({s})\n", .{[1]u8{direction}});
+        }
+    }
+    return steps;
+}
+
+fn finished(pos: std.ArrayList(Ident)) !bool {
+    for (pos.items) |i| if (i[2] != 'Z') return false;
+    return true;
 }
