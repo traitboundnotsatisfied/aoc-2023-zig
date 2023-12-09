@@ -2,8 +2,8 @@ const std = @import("std");
 
 pub fn main() !void {
     try test_process("test.txt", 6, 114);
-    const real_sum = try process("input.txt", 21);
-    std.debug.print("The answer for part 1 is {d}.\n", .{real_sum});
+    //const real_sum = try process("input.txt", 21);
+    //std.debug.print("The answer for part 1 is {d}.\n", .{real_sum});
 }
 
 fn test_process(filename: []const u8, comptime n: comptime_int, answer: i64) !void {
@@ -75,12 +75,15 @@ fn process_line(line_untyped: anytype, comptime n: comptime_int) i64 {
 
 fn extrapolate(lasts_untyped: anytype, lasts_len: usize, comptime n: comptime_int) i64 {
     const lasts = @as([n]i64, lasts_untyped);
+    std.debug.print("{d} | {d}", .{ lasts, lasts_len });
     var predicted: i64 = lasts[lasts_len - 1];
     var lasts_i: usize = lasts_len - 2;
-    while (lasts_i >= 0) {
+    while (true) {
         predicted += lasts[lasts_i];
-        lasts_i += 1;
+        if (lasts_i == 0) break;
+        lasts_i -= 1;
     }
+    std.debug.print(" -> {d}\n", .{predicted});
     return predicted;
 }
 
