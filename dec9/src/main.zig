@@ -1,13 +1,21 @@
 const std = @import("std");
 
 pub fn main() !void {
-    try test_process("test.txt", 6, 114);
-    //const real_sum = try process("input.txt", 21);
-    //std.debug.print("The answer for part 1 is {d}.\n", .{real_sum});
+    try test_process("test.txt", 6, false, 114);
+    try test_process("test.txt", 6, true, 2);
+    const real_sum = try process("input.txt", 21, false);
+    std.debug.print("The answer for part 1 is {d}.\n", .{real_sum});
+    const real_sum_part2 = try process("input.txt", 21, true);
+    std.debug.print("The answer for part 2 is {d}.\n", .{real_sum_part2});
 }
 
-fn test_process(filename: []const u8, comptime n: comptime_int, answer: i64) !void {
-    const test_sum = try process(filename, n);
+fn test_process(
+    filename: []const u8,
+    comptime n: comptime_int,
+    comptime part2: bool,
+    answer: i64,
+) !void {
+    const test_sum = try process(filename, n, part2);
     if (test_sum == answer) {
         std.debug.print("TEST PASSED\n", .{});
     } else {
@@ -18,7 +26,7 @@ fn test_process(filename: []const u8, comptime n: comptime_int, answer: i64) !vo
 
 const Ident = [3]u8;
 
-fn process(filename: []const u8, comptime n: comptime_int) !i64 {
+fn process(filename: []const u8, comptime n: comptime_int, comptime part2: bool) !i64 {
     const file = try std.fs.cwd().openFile(filename, .{});
     defer file.close();
     var reader = file.reader();
@@ -39,10 +47,18 @@ fn process(filename: []const u8, comptime n: comptime_int) !i64 {
             num_neg = false;
             line_i = 0;
         } else if (ch == ' ') {
-            if (num_neg) {
-                line[line_i] = -num;
+            if (part2) {
+                if (num_neg) {
+                    line[n - line_i - 1] = -num;
+                } else {
+                    line[n - line_i - 1] = num;
+                }
             } else {
-                line[line_i] = num;
+                if (num_neg) {
+                    line[line_i] = -num;
+                } else {
+                    line[line_i] = num;
+                }
             }
             line_i += 1;
             num = 0;
